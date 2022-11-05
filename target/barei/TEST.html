@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <!-- import bootstrap 5.2.1 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+
+    <!-- import font-style -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300&display=swap" rel="stylesheet">
+
+    <!-- import css stylesheet -->
+
+    <!-- import jquery-3.6.0 -->
+    <script src="http://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- import icon -->
+    <script src="https://kit.fontawesome.com/b5ef6b60f3.js" crossorigin="anonymous"></script>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qs/6.11.0/qs.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+
+
+
+<div class="container" id="app">
+
+<button @click="minus()">-</button>{{Amount}}<button @click="plus()">+</button>
+
+    <br>
+    <br>
+
+    <input type="text" v-model="Amount">
+
+
+<!--  我的 v-for 範例: 購物車利用 jsonObj 產生  -->
+
+    <ul class="list-group mb-3 sticky-top">
+        <li v-for="orderItems in orderItems" class="list-group-item d-flex justify-content-between lh-condensed">
+            <div>
+                <h6 class="my-0">{{orderItems.itemName}}×{{orderItems.cdAmount}}</h6>
+            </div>
+            <span class="text-muted">${{orderItems.itemPrice}}</span>
+        </li>
+
+        <li class="list-group-item d-flex justify-content-between bg-light">
+            <div class="text-success">
+                <h6 class="my-0">{{coupon.couponName}}</h6>
+            </div>
+            <span class="text-success">-${{coupon.couponVal}}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+            <span>Total (TWD)</span>
+            <strong>${{finalPrice}}</strong>
+        </li>
+    </ul>
+
+    <button type="submit" @click="nextStep()">Submit</button> <= post
+<!-- 執行 post 方法 -->
+
+    <h4>兩種可以結合成為簡易購物車</h4>
+    <h4>參數都可以 post</h4>
+    <h1>// TODO </h1>
+
+</div>
+
+
+<script>
+
+    // 創建 App 實體，vue3 以後要在底下 mount 才會生效 ( Google: vue 生命週期 )
+    let vm = Vue.createApp({
+        data() {
+            return {
+                /**
+                 * @jsonObj: coupon, orderItems( Cart ) <= 接收到的 json
+                 */
+                coupon: {
+                    couponId: 1,
+                    couponName: '會員入會禮300元折價券',
+                    couponVal: 300
+                },
+                orderItems: [
+                    {
+                        "itemId": 1,
+                        "itemName": "[Zeniter先立特] 頂級無穀幼母犬1.2kg 幼母犬糧 狗飼料",
+                        "cdAmount": 2,
+                        "itemPrice": 499
+                    },
+                    {
+                        "itemId": 3,
+                        "itemName": "Petkit 小佩智能感應式除臭貓砂盆",
+                        "cdAmount": 1,
+                        "itemPrice": 2380
+                    },
+                    {
+                        "itemId": 7,
+                        "itemName": "Petkit 小佩 寵物智能去味器-除臭首推",
+                        "cdAmount": 1,
+                        "itemPrice": 790
+                    },
+                    {
+                        "itemId": 11,
+                        "itemName": "『爆玩新品』PIDAN 電動小雪怪-翻滾玩具",
+                        "cdAmount": 1,
+                        "itemPrice": 160
+                    }
+                ],
+                /**
+                 * @param Amount
+                 */
+                Amount: 0
+            }
+        },
+        computed: {
+            finalPrice: function () { // 計算購物車總價
+                let total = 0;
+                let finalPrice = 0;
+                for (let i in this.orderItems) {
+                    var attr = this.orderItems[i];
+                    total += parseInt((attr.itemPrice * attr.cdAmount));
+                }
+                finalPrice = total - this.coupon.couponVal;
+                return finalPrice;
+            }
+        },
+        methods: {
+            nextStep: function () {
+                var qs = Qs; // qs 就是某種序列化的工具
+                axios.post('/CGA104G1/OrderBuyServlet', qs.stringify({ // 就 ajax
+                    // 傳遞序列化的參數
+                    memberId: this.memId,
+                    action: this.action, // action 就 ... 加減用
+                    couponId: this.coupon.couponId,
+                    orderPaying: this.orderPaying,
+                    orderSend: this.orderSend,
+                    receiverName: this.orderName,
+                    orderOther: this.orderOther,
+                    receiverAddress: this.address,
+                    receiverPhone: this.phone,
+                    // post Json 物件
+                    dataArr: JSON.stringify(this.orderItems)
+                }))
+                    .then(res => {
+                        console.log(res);
+                        console.log(JSON.stringify(this.orderItems)) // 印出 JSONObj 序列化
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    })
+            },
+            // 替兩個按鈕綁定的方法 => 實際使用方法加 @click="方法名稱()" ex. @click="plus()"
+
+            plus: function () {
+                this.Amount += 1;
+            },
+            minus: function () {
+                this.Amount -= 1;
+            }
+        }
+    })
+    vm.mount('#app'); // 掛載才會生效!
+</script>
+
+<!-- import bootstrap 5.2.1 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8"
+        crossorigin="anonymous"></script>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</body>
+</html>
